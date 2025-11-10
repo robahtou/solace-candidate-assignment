@@ -7,13 +7,13 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 Install dependencies
 
 ```bash
-npm i
+pnpm i
 ```
 
 Run the development server:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ## Database set up
@@ -26,15 +26,17 @@ The app is configured to return a default list of advocates. This will allow you
 docker compose up -d
 ```
 
-2. Create a `solaceassignment` database.
+2. Push migration to the database
 
-3. Push migration to the database
+> NOTE: must set `DATABASE_URL` in `.env` before running migrations
 
 ```bash
 npx drizzle-kit push
 ```
 
-4. Seed the database
+3. Seed the database
+
+> NOTE: assumes your are running the development server (see above)
 
 ```bash
 curl -X POST http://localhost:3000/api/seed
