@@ -24,6 +24,18 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@DB/*": [
+        "./src/db/*"
+      ],
+      "@DB": [
+        "./src/db"
+      ],
+      "@Utils/*": [
+        "./src/utils/*"
+      ],
+      "@Utils": [
+        "./src/utils"
       ]
     },
     "target": "ES2017"
