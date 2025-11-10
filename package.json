@@ -2,15 +2,6 @@
   "name": "solace-candidate-assignment",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "generate": "drizzle-kit generate",
-    "migrate:up": "node ./src/db/migrate.js",
-    "seed": "node --loader esbuild-register/loader -r esbuild-register ./src/db/seed/index.ts"
-  },
   "dependencies": {
     "drizzle-orm": "0.44.7",
     "next": "16.0.1",
@@ -29,5 +20,15 @@
     "postcss": "8.5.6",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "NEXT_TELEMETRY_DISABLED=1 && pnpm noTel && next build",
+    "build:start": "next start",
+    "noTel": "next telemetry disable",
+    "repack": "del -f .next node_modules package-lock.json pnpm-lock.yaml && pnpm install",
+    "start": "next dev --turbopack",
+    "generate": "drizzle-kit generate",
+    "migrate:up": "node ./src/db/migrate.js",
+    "seed": "node --loader esbuild-register/loader -r esbuild-register ./src/db/seed/index.ts"
   }
 }
