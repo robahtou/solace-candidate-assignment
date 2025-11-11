@@ -16,9 +16,9 @@ export async function GET(req: Request) {
   const maxYears  = url.searchParams.get('maxYears');
 
   const pageRaw  = Number(url.searchParams.get('page') || '1');
-  const limitRaw = Number(url.searchParams.get('limit') || '50');
+  const limitRaw = Number(url.searchParams.get('limit') || '15');
   const page     = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
-  const limit    = Math.max(1, Math.min(200, Number.isFinite(limitRaw) ? limitRaw : 50));
+  const limit    = Math.max(1, Math.min(200, Number.isFinite(limitRaw) ? limitRaw : 15));
   const offset   = (page - 1) * limit;
 
   const filters: any[] = [];

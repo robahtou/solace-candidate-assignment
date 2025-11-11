@@ -10,7 +10,7 @@ import { AdvocatesTable }       from '@Components/advocates/AdvocatesTable';
 import styles                   from './styles.module.css';
 
 
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 15;
 // Simple page-level Header to align UI with Solace brand theme.
 function Header() {
   return (

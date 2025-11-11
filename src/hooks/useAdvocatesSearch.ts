@@ -27,7 +27,7 @@ type ApiResponse = {
   pageInfo: PageInfo;
 };
 
-export function useAdvocatesSearch(filters: AdvocateFilters, limit = 50) {
+export function useAdvocatesSearch(filters: AdvocateFilters, limit = 15) {
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const [page, setPage] = useState<number>(1);
