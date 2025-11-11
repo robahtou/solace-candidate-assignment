@@ -1,12 +1,11 @@
 import type { Advocate }  from '@DB/schema';
 
-import { and, or, eq, ilike, gte, lte, lt, desc, sql } from 'drizzle-orm';
+import { and, ilike, gte, lte, desc, sql } from 'drizzle-orm';
 import db                 from '@DB';
 import { advocates }      from '@DB/schema';
 
-// Server-side search + keyset pagination for large advocate dataset.
-// - Query params: q, city, degree, specialty, minYears, maxYears, limit, cursor
-// - Pagination: order by created_at DESC, id DESC; cursor format: "<tsMs>_<id>"
+// Switched to page/limit pagination to support numbered pagination UI.
+// If dataset grows large, consider hybrid cursor navigation with a cached total.
 export async function GET(req: Request) {
   const url       = new URL(req.url);
   const q         = (url.searchParams.get('q') || '').trim();
@@ -15,10 +14,12 @@ export async function GET(req: Request) {
   const specialty = (url.searchParams.get('specialty') || '').trim();
   const minYears  = url.searchParams.get('minYears');
   const maxYears  = url.searchParams.get('maxYears');
-  const cursor    = url.searchParams.get('cursor') || '';
 
+  const pageRaw  = Number(url.searchParams.get('page') || '1');
   const limitRaw = Number(url.searchParams.get('limit') || '50');
+  const page     = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
   const limit    = Math.max(1, Math.min(200, Number.isFinite(limitRaw) ? limitRaw : 50));
+  const offset   = (page - 1) * limit;
 
   const filters: any[] = [];
 
@@ -65,51 +66,35 @@ export async function GET(req: Request) {
     filters.push(fts);
   }
 
-  // Keyset cursor on (created_at,id) DESC
-  let cursorPredicate: any | null = null;
-  if (cursor) {
-    const [tsStr, idStr] = cursor.split('_');
-    const ts = Number(tsStr);
-    const id = Number(idStr);
-    if (Number.isFinite(ts) && Number.isFinite(id)) {
-      const cursorDate = new Date(ts);
-      cursorPredicate = or(
-        lt(advocates.createdAt, cursorDate),
-        and(eq(advocates.createdAt, cursorDate), lt(advocates.id, id))
-      );
-    }
-  }
+  const predicate = filters.length ? and(...filters) : sql<boolean>`true`;
 
-  const whereAll = filters.length
-    ? (cursorPredicate ? and(and(...filters), cursorPredicate) : and(...filters))
-    : (cursorPredicate ? cursorPredicate : undefined);
+  // Total count to compute total pages
+  const totalRows = await (db as any)
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(advocates)
+    .where(predicate);
+  const totalCount = totalRows?.[0]?.count ?? 0;
 
-  const predicate = (whereAll as any) ?? sql<boolean>`true`;
-  const rows: Advocate[] = await (db as any)
+  const data: Advocate[] = await (db as any)
     .select()
     .from(advocates)
     .where(predicate)
     .orderBy(desc(advocates.createdAt), desc(advocates.id))
-    .limit(limit + 1);
+    .limit(limit)
+    .offset(offset);
 
-  const hasNextPage = rows.length > limit;
-  const data = hasNextPage ? rows.slice(0, limit) : rows;
-
-  // Derive nextCursor from last row in page
-  let nextCursor: string | null = null;
-  if (hasNextPage) {
-    const last = data[data.length - 1] as Advocate;
-    const ts = last.createdAt ? new Date(last.createdAt as any).getTime() : 0;
-    nextCursor = `${ts}_${last.id}`;
-  }
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
   return Response.json(
     {
       data,
       pageInfo: {
-        nextCursor,
-        hasNextPage,
-        limit
+        page,
+        pageSize: limit,
+        totalCount,
+        totalPages,
+        hasPrevPage: page > 1,
+        hasNextPage: page < totalPages
       }
     },
     {

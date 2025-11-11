@@ -2,7 +2,7 @@
 
 import type { AdvocateFilters } from '@Hooks/useAdvocatesSearch';
 
-import { useState }             from 'react';
+import { useMemo, useState }    from 'react';
 import { useAdvocatesSearch }   from '@Hooks/useAdvocatesSearch';
 import { AdvocatesFilters }     from '@Components/advocates/Filters';
 import { AdvocatesTable }       from '@Components/advocates/AdvocatesTable';
@@ -37,11 +37,13 @@ function Home() {
 
   const {
     advocates,
-    hasNextPage,
+    page,
+    pageInfo,
     isLoading,
-    isLoadingMore,
     error,
-    handleLoadMore
+    goToPage,
+    nextPage,
+    prevPage
   } = useAdvocatesSearch(filters, DEFAULT_LIMIT);
 
   const handleFiltersChange = (patch: Partial<AdvocateFilters>) => {
@@ -58,6 +60,45 @@ function Home() {
       maxYears: ''
     });
   };
+
+  // Derive human-readable "X–Y of Z" range for the summary.
+  const rangeText = useMemo(() => {
+    if (!pageInfo) return '';
+    const start = pageInfo.totalCount === 0 ? 0 : (pageInfo.page - 1) * pageInfo.pageSize + 1;
+    const end = start + advocates.length - 1;
+    return `${start}-${end} of ${pageInfo.totalCount}`;
+  }, [pageInfo, advocates.length]);
+
+  // Compact pagination (1 … N-1 N N+1 … T) with ellipses where needed.
+  const visiblePages = useMemo(() => {
+    if (!pageInfo) return [];
+    const total = pageInfo.totalPages;
+    const current = pageInfo.page;
+    const siblingCount = 1;
+
+    const pages: (number | 'ellipsis')[] = [];
+    const add = (p: number | 'ellipsis') => pages.push(p);
+
+    const left = Math.max(2, current - siblingCount);
+    const right = Math.min(total - 1, current + siblingCount);
+
+    add(1);
+    if (left > 2) add('ellipsis');
+    for (let p = left; p <= right; p++) add(p);
+    if (right < total - 1) add('ellipsis');
+    if (total > 1) add(total);
+
+    // De-duplicate
+    const dedup: (number | 'ellipsis')[] = [];
+    for (const p of pages) {
+      if (p === 'ellipsis') {
+        if (dedup[dedup.length - 1] !== 'ellipsis') dedup.push('ellipsis');
+      } else {
+        if (!dedup.includes(p)) dedup.push(p);
+      }
+    }
+    return dedup;
+  }, [pageInfo]);
 
   return (
     <main className={styles['page']}>
@@ -78,9 +119,13 @@ function Home() {
 
       <section className={styles['summary']}>
         <span className={styles['count']}>
-          Showing {advocates.length} result{advocates.length !== 1 ? 's' : ''}
+          {pageInfo ? `Showing ${rangeText}` : `Showing ${advocates.length} result${advocates.length !== 1 ? 's' : ''}`}
         </span>
-        {hasNextPage && <span className={styles['muted']}>More results available</span>}
+        {pageInfo && pageInfo.totalPages > 1 && (
+          <span className={styles['muted']}>
+            Page {pageInfo.page} of {pageInfo.totalPages}
+          </span>
+        )}
       </section>
 
       <br />
@@ -88,11 +133,50 @@ function Home() {
       <AdvocatesTable advocates={advocates} />
 
       <br />
-      <div>
-        <button className={styles['button']} onClick={handleLoadMore} disabled={!hasNextPage || isLoading || isLoadingMore}>
-          {isLoadingMore ? 'Loading…' : hasNextPage ? 'Load more' : 'No more results'}
-        </button>
-      </div>
+      {pageInfo && pageInfo.totalPages > 1 && (
+        <nav className={styles['pagination']} aria-label="Pagination">
+          <button
+            className={styles['page-button']}
+            onClick={prevPage}
+            disabled={!pageInfo.hasPrevPage || isLoading}
+            aria-label="Previous page"
+          >
+            Prev
+          </button>
+
+          {visiblePages.map((p, idx) => {
+            if (p === 'ellipsis') {
+              return (
+                <span key={`ellipsis-${idx}`} className={styles['page-ellipsis']} aria-hidden="true">
+                  …
+                </span>
+              );
+            }
+            const isActive = p === page;
+            return (
+              <button
+                key={p}
+                className={[styles['page-button'], isActive ? styles['page-button-active'] : ''].filter(Boolean).join(' ')}
+                onClick={() => goToPage(p)}
+                aria-current={isActive ? 'page' : undefined}
+                aria-label={`Page ${p}`}
+                disabled={isLoading}
+              >
+                {p}
+              </button>
+            );
+          })}
+
+          <button
+            className={styles['page-button']}
+            onClick={nextPage}
+            disabled={!pageInfo.hasNextPage || isLoading}
+            aria-label="Next page"
+          >
+            Next
+          </button>
+        </nav>
+      )}
     </main>
   );
 }

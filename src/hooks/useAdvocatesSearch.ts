@@ -3,7 +3,7 @@ import type { Advocate } from '@DB/schema';
 import { useDebouncedValue } from '@Utils/debounce';
 
 
-// Centralizes server-driven search with debounce + keyset pagination.
+// Centralizes server-driven search with debounce + page-based pagination.
 export type AdvocateFilters = {
   q: string;
   city: string;
@@ -14,9 +14,12 @@ export type AdvocateFilters = {
 };
 
 type PageInfo = {
-  nextCursor: string | null;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPrevPage: boolean;
   hasNextPage: boolean;
-  limit: number;
 };
 
 type ApiResponse = {
@@ -26,10 +29,9 @@ type ApiResponse = {
 
 export function useAdvocatesSearch(filters: AdvocateFilters, limit = 50) {
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
+  const [page, setPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -41,6 +43,11 @@ export function useAdvocatesSearch(filters: AdvocateFilters, limit = 50) {
   const dMinYears = useDebouncedValue(filters.minYears.trim(), 250);
   const dMaxYears = useDebouncedValue(filters.maxYears.trim(), 250);
 
+  // Reset to first page when any debounced filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [dq, dCity, dDegree, dSpecialty, dMinYears, dMaxYears]);
+
   useEffect(() => {
     if (abortRef.current) {
       abortRef.current.abort();
@@ -48,13 +55,14 @@ export function useAdvocatesSearch(filters: AdvocateFilters, limit = 50) {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const fetchFirstPage = async () => {
+    const fetchPage = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
         const params = new URLSearchParams();
         params.set('limit', String(limit));
+        params.set('page', String(page));
         if (dq) params.set('q', dq);
         if (dCity) params.set('city', dCity);
         if (dDegree) params.set('degree', dDegree);
@@ -67,62 +75,52 @@ export function useAdvocatesSearch(filters: AdvocateFilters, limit = 50) {
         const json = (await res.json()) as ApiResponse;
 
         setAdvocates(json.data);
-        setNextCursor(json.pageInfo.nextCursor);
-        setHasNextPage(json.pageInfo.hasNextPage);
+        setPageInfo(json.pageInfo);
       } catch (e: any) {
         if (e?.name !== 'AbortError') {
           setError(e?.message || 'Unknown error');
           setAdvocates([]);
-          setNextCursor(null);
-          setHasNextPage(false);
+          setPageInfo(null);
         }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFirstPage();
+    fetchPage();
 
     return () => {
       controller.abort();
     };
-  }, [dq, dCity, dDegree, dSpecialty, dMinYears, dMaxYears, limit]);
+  }, [dq, dCity, dDegree, dSpecialty, dMinYears, dMaxYears, limit, page]);
 
-  const handleLoadMore = async () => {
-    if (!nextCursor || isLoadingMore) return;
-    try {
-      setIsLoadingMore(true);
-      const params = new URLSearchParams();
-      params.set('limit', String(limit));
-      params.set('cursor', nextCursor);
-      if (dq) params.set('q', dq);
-      if (dCity) params.set('city', dCity);
-      if (dDegree) params.set('degree', dDegree);
-      if (dSpecialty) params.set('specialty', dSpecialty);
-      if (dMinYears) params.set('minYears', dMinYears);
-      if (dMaxYears) params.set('maxYears', dMaxYears);
+  const goToPage = (p: number) => {
+    setPage((prev) => {
+      const next = Math.max(1, Math.floor(p));
+      if (next === prev) return prev;
+      return next;
+    });
+  };
 
-      const res = await fetch(`/api/advocates?${params.toString()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const json = (await res.json()) as ApiResponse;
+  const nextPage = () => {
+    setPage((prev) => {
+      const max = pageInfo?.totalPages ?? prev + 1;
+      return Math.min(prev + 1, max);
+    });
+  };
 
-      setAdvocates((prev) => prev.concat(json.data));
-      setNextCursor(json.pageInfo.nextCursor);
-      setHasNextPage(json.pageInfo.hasNextPage);
-    } catch (e: any) {
-      setError(e?.message || 'Unknown error');
-    } finally {
-      setIsLoadingMore(false);
-    }
+  const prevPage = () => {
+    setPage((prev) => Math.max(1, prev - 1));
   };
 
   return {
     advocates,
-    nextCursor,
-    hasNextPage,
+    page,
+    pageInfo,
     isLoading,
-    isLoadingMore,
     error,
-    handleLoadMore
+    goToPage,
+    nextPage,
+    prevPage
   };
 }
