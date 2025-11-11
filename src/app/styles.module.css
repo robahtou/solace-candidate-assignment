@@ -1,11 +1,63 @@
 /* Styles for advocates page filters and table. Keep simple, responsive, and accessible. */
+/* This module defines a light, brand-aligned theme using Solace green. */
 
 .page {
   margin: 24px;
+  /* Solace brand palette (approx.) */
+  --solace-green-700: #0d332c;
+  --solace-green-650: #104038;
+  --solace-green-600: #12473c;
+  --solace-green-500: #165349;
+  --solace-green-100: #e6f0ed;
+  --solace-ink-900: #1a1f1e;
+  --solace-ink-700: #3c4a45;
+  --solace-ink-500: #5d756d;
+  --solace-white: #ffffff;
 }
 
 .heading {
   font-size: 24px;
+  font-weight: 600;
+}
+
+/* Header */
+.header {
+  margin: -24px -24px 24px;
+  padding: 20px 24px;
+  background: linear-gradient(180deg, var(--solace-green-650) 0%, var(--solace-green-700) 100%);
+  color: var(--solace-white);
+  border-bottom: 1px solid #0b2b25;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: var(--solace-green-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 22px;
+  color: var(--solace-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.brand-text {
+  font-size: 22px;
+  line-height: 1.2;
   font-weight: 600;
 }
 
@@ -28,20 +80,26 @@
 
 .label {
   font-size: 12px;
-  color: #333333;
+  color: var(--solace-ink-700);
 }
 
 .input {
   height: 36px;
-  border: 1px solid #cccccc;
+  border: 1px solid #b8c5c0;
   border-radius: 4px;
   padding: 0 10px;
   font-size: 14px;
   outline: none;
+  background: var(--solace-white);
+  color: var(--solace-ink-900);
 }
 
 .input:focus {
-  border-color: #666666;
+  border-color: var(--solace-green-600);
+}
+
+.input::placeholder {
+  color: var(--solace-ink-500);
 }
 
 .actions {
@@ -52,11 +110,20 @@
 .button {
   height: 36px;
   padding: 0 12px;
-  border: 1px solid #222222;
-  background: #ffffff;
-  color: #222222;
+  border: 1px solid var(--solace-green-600);
+  background: var(--solace-green-600);
+  color: var(--solace-white);
   border-radius: 4px;
   cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--solace-green-500);
+  border-color: var(--solace-green-500);
+}
+
+.button:focus-visible {
+  box-shadow: 0 0 0 3px var(--solace-green-100);
 }
 
 .button:disabled {
@@ -69,11 +136,15 @@
   border-collapse: collapse;
 }
 
+.table-wrap {
+  overflow-x: auto;
+}
+
 .table th,
 .table td {
   text-align: left;
   padding: 10px 8px;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid #e6f0ed;
   vertical-align: top;
   font-size: 14px;
 }
@@ -87,11 +158,11 @@
 
 .count {
   font-weight: 500;
-  color: #333333;
+  color: var(--solace-green-650);
 }
 
 .muted {
-  color: #666666;
+  color: var(--solace-ink-500);
   font-size: 12px;
 }
 
