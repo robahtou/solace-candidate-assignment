@@ -2,6 +2,7 @@
   "name": "solace-candidate-assignment",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "drizzle-orm": "0.44.7",
     "next": "16.0.1",
@@ -14,6 +15,7 @@
     "@types/node": "24.10.0",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "dotenv": "17.2.3",
     "drizzle-kit": "0.31.6",
     "eslint": "9.39.1",
     "eslint-config-next": "16.0.1",
@@ -28,7 +30,7 @@
     "repack": "del -f .next node_modules package-lock.json pnpm-lock.yaml && pnpm install",
     "start": "next dev --turbopack",
     "generate": "drizzle-kit generate",
-    "migrate:up": "node ./src/db/migrate.js",
+    "migrate:up": "node ./src/db/migrate.mjs",
     "seed": "node --loader esbuild-register/loader -r esbuild-register ./src/db/seed/index.ts"
   }
 }

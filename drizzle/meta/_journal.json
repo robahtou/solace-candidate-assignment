@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1762818153530,
+      "tag": "0000_lethal_captain_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762818253530,
+      "tag": "0002_advocates_search_indexes",
+      "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762818353530,
+      "tag": "0003_advocates_fts_payload",
+      "breakpoints": false
+    }
+  ]
+}
