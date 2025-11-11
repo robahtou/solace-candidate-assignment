@@ -5,16 +5,11 @@
   "type": "module",
   "dependencies": {
     "@faker-js/faker": "10.1.0",
-    "class-variance-authority": "0.7.1",
-    "clsx": "2.1.1",
     "drizzle-orm": "0.44.7",
-    "lucide-react": "0.553.0",
     "next": "16.0.1",
     "postgres": "3.4.7",
     "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "tailwind-merge": "3.4.0",
-    "tailwindcss-animate": "1.0.7"
+    "react-dom": "19.2.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.17",
@@ -27,6 +22,7 @@
     "eslint-config-next": "16.0.1",
     "postcss": "8.5.6",
     "tailwindcss": "4.1.17",
+    "tsx": "4.20.6",
     "typescript": "5.9.3"
   },
   "scripts": {
@@ -37,6 +33,6 @@
     "start": "next dev --turbopack",
     "generate": "drizzle-kit generate",
     "migrate:up": "node ./src/db/migrate.mjs",
-    "seed": "node --loader esbuild-register/loader -r esbuild-register ./src/db/seed/index.ts"
+    "seed": "tsx ./src/db/seed/index.ts"
   }
 }
